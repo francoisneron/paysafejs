@@ -1,41 +1,13 @@
 var http = require('http');
-var url = require('url');
-var fs = require('fs');
 
-http.createServer(function(req, res) {
-	var u = url.parse(req.url, true);
+var server = http.createServer(function(request, response) {
 
-	var filePath = u.pathname != "/" ? u.pathname.substring(1) : "index.html";
+    response.writeHead(200, {"Content-Type": "text/plain"});
+    response.end("Hello World!");
 
-	fs.exists(filePath, function(exists) {
-		if (exists) {
-			fs.readFile(filePath, function(error, content) {
-				if (error) {
-					console.log("[ERROR] Reading file %s failed, error %s", filePath, error);
-					res.writeHead(500);
-					res.end();
-				} else {
-					if (endsWith(filePath, ".html")) {
-						res.writeHead(200, {'Content-Type' : 'text/html'});
-					} else if (endsWith(filePath, ".css")) {
-						res.writeHead(200, {'Content-Type' : 'text/css'});
-					} else if (endsWith(filePath, ".js")) {
-						res.writeHead(200, {'Content-Type' : 'text/javascript'});
-					} else {
-						res.writeHead(200, {'Content-Type' : 'text/plain'});
-					}
-					res.end(content, 'utf-8');
-				}
-			});
-		} else {
-			res.writeHead(404);
-			res.end();
-		}
-	});
+});
 
-}).listen(8080, '0.0.0.0');
-console.log("[INFO] Paysafe demo running at http://0.0.0.0:8080/");
+var port = process.env.PORT || 1337;
+server.listen(port);
 
-function endsWith(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
-}
+console.log("Server running at http://localhost:%d", port);
