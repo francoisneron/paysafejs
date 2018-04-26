@@ -5,8 +5,11 @@ var app = express();
 var paysafeKeys = require('./config');
 
 app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + '/views'));
+
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+
 app.set('json spaces', 2);
 
 //app.set('port', (process.env.PORT || 8080))
