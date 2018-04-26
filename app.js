@@ -19,6 +19,40 @@ app.get("/", function (req, res) {
   res.sendFile("index.html");
 });
 
+app.post("/tokenize", function (req, res) {
+
+	var headers = {
+		'Authorization': 'Basic ' + 'T1QtNTY4OTA6Qi1wMS0wLTU1NGQwNDFhLTAtMzAyYzAyMTQ3NjdlYjk4Y2Y2ZGUxNjRmYzNiZjRiNTllM2Q1NmNkMDhmNzZlNjk2MDIxNDQ2ZGI1NDRhNTliYWM1MWRhYzNhOWI2NWVhYzVjZjU4NjNmZDNjNzY=',
+		'Content-Type': 'application/json'
+	};
+	
+	console.log(req);
+
+	var options = {
+		url: "https://api.paysafe.com/customervault/v1/applepaysingleusetokens",
+		method: "post",
+		headers: headers,
+		body: {
+			applePayPaymentToken: req.body.token.paymentData
+		},
+		json: true
+	};
+
+	request(options, function (err, response, body) {
+		if (err) {
+			console.log("Error generating Apple Pay session!");
+			console.log(err, response, body);
+			res.status(500).send(err);
+		}else {
+			console.log(response.body);
+			res.send({				
+				token: response.body
+			});
+		}
+	});
+
+});
+
 app.listen(app.get('port'), function() {
   console.log("Node app is running at localhost:" + app.get('port'))
 })
