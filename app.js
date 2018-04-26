@@ -5,9 +5,20 @@ var http = require("http");
 var bodyParser = require("body-parser");
 var request = require("request");
 
-var app = express();
+var APPLE_PAY_CERTIFICATE_PATH = "./certificates/merch.pem";
+var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
+var SSL_KEY_PATH = "./certificates/domain.key";
+var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
+var MERCHANT_DOMAIN = "applepayintegration-env.w5pfnavnqi.ca-central-1.elasticbeanstalk.com";
 
-var paysafeKeys = require('./config');
+var privateKey  = fs.readFileSync(SSL_KEY_PATH);
+var certificate = fs.readFileSync(SSL_CERTIFICATE_PATH);
+var applePayCert = fs.readFileSync(APPLE_PAY_CERTIFICATE_PATH);
+
+var config = require('./config');
+var credentials = {key: privateKey, cert: certificate};
+
+var app = express();
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/views'));
@@ -23,6 +34,37 @@ app.set('port', (process.env.PORT || 8080))
 app.get("/", function (req, res) {
   res.sendFile("index.html");
 });
+
+app.post("/getApplePaySession", function (req, res) {
+	// We need a URL from the client to call
+	if (!req.body.url) return res.sendStatus(400);
+	// We must provide our Apple Pay certificate, merchant ID, domain name, and display name
+	var options = {
+		url: req.body.url,
+		cert: applePayCert,
+		key: applePayCert,
+		method: "post",
+		body: {
+			merchantIdentifier: MERCHANT_IDENTIFIER,
+			domainName: MERCHANT_DOMAIN,
+			displayName: "My Store"
+		},
+		json: true
+	};
+	console.log(options);
+
+	// Send the request to the Apple Pay server and return the response to the client
+	request(options, function (err, response, body) {
+		if (err) {
+			console.log("Error generating Apple Pay session!");
+			console.log(err, response, body);
+			res.status(500).send(body);
+		}
+		res.send(body);
+	});
+});
+
+
 
 app.post("/tokenize", function (req, res) {
 
@@ -57,6 +99,12 @@ app.post("/tokenize", function (req, res) {
 	});
 
 });
+
+app.get('/.well-known/:file', (req, res, next) => {
+  logger(req);
+
+  res.sendFile(__dirname + '/.well-known/' + req.params.file);
+})
 
 app.listen(app.get('port'), function() {
   console.log("Node app is running at localhost:" + app.get('port'))
