@@ -12,15 +12,13 @@ app.use(bodyParser.json());
 
 app.set('json spaces', 2);
 
-//app.set('port', (process.env.PORT || 8080))
+app.set('port', (process.env.PORT || 8080))
 
 //the view, client key is passed to ejs template
 app.get("/", function (req, res) {
   res.sendFile("index.html");
 });
 
-//app.listen(app.get('port'), function() {
-//  console.log("Node app is running at localhost:" + app.get('port'))
-//})
-
-app.listen(8080);
+app.listen(app.get('port'), function() {
+  console.log("Node app is running at localhost:" + app.get('port'))
+})
