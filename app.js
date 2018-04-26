@@ -5,18 +5,18 @@ var http = require("http");
 var bodyParser = require("body-parser");
 var request = require("request");
 
-var APPLE_PAY_CERTIFICATE_PATH = "./certificates/merch.pem";
-var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
-var SSL_KEY_PATH = "./certificates/domain.key";
-var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
-var MERCHANT_DOMAIN = "applepayintegration-env.w5pfnavnqi.ca-central-1.elasticbeanstalk.com";
+//var APPLE_PAY_CERTIFICATE_PATH = "./certificates/merch.pem";
+//var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
+//var SSL_KEY_PATH = "./certificates/domain.key";
+//var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
+//var MERCHANT_DOMAIN = "applepayintegration-env.w5pfnavnqi.ca-central-1.elasticbeanstalk.com";
 
-var privateKey  = fs.readFileSync(SSL_KEY_PATH);
-var certificate = fs.readFileSync(SSL_CERTIFICATE_PATH);
-var applePayCert = fs.readFileSync(APPLE_PAY_CERTIFICATE_PATH);
+//var privateKey  = fs.readFileSync(SSL_KEY_PATH);
+//var certificate = fs.readFileSync(SSL_CERTIFICATE_PATH);
+//var applePayCert = fs.readFileSync(APPLE_PAY_CERTIFICATE_PATH);
 
 var config = require('./config');
-var credentials = {key: privateKey, cert: certificate};
+//var credentials = {key: privateKey, cert: certificate};
 
 var app = express();
 
@@ -35,6 +35,7 @@ app.get("/", function (req, res) {
   res.sendFile("index.html");
 });
 
+/*
 app.post("/getApplePaySession", function (req, res) {
 	// We need a URL from the client to call
 	if (!req.body.url) return res.sendStatus(400);
@@ -63,7 +64,7 @@ app.post("/getApplePaySession", function (req, res) {
 		res.send(body);
 	});
 });
-
+*/
 
 
 app.post("/tokenize", function (req, res) {
