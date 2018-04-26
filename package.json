@@ -10,7 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.16.3",
-    "body-parser": "^1.4.3"
+    "body-parser": "^1.4.3",
+    "request": "^2.83.0"
   },
   "repository": {
     "type": "git",
