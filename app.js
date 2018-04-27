@@ -5,6 +5,12 @@ var http = require("http");
 var bodyParser = require("body-parser");
 var request = require("request");
 
+// This line is from the Node.js HTTPS documentation.
+var options = {
+  key: fs.readFileSync('./certificates/keys/client-key.pem'),
+  cert: fs.readFileSync('./certificates/keys/client-cert.pem')
+};
+
 //var APPLE_PAY_CERTIFICATE_PATH = "./certificates/merch.pem";
 //var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
 //var SSL_KEY_PATH = "./certificates/domain.key";
@@ -20,6 +26,12 @@ var config = require('./config');
 
 var app = express();
 
+// Create an HTTP service.
+http.createServer(app).listen(80);
+
+// Create an HTTPS service identical to the HTTP service.
+https.createServer(options, app).listen(443);
+
 app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/views'));
 
@@ -30,9 +42,8 @@ app.set('json spaces', 2);
 
 app.set('port', (process.env.PORT || 8080))
 
-//the view, client key is passed to ejs template
 app.get("/", function (req, res) {
-  res.sendFile("index.html");
+  res.sendFile("./views/index.html");
 });
 
 /*
@@ -106,6 +117,7 @@ app.get('/.well-known/:file', (req, res, next) => {
 
   res.sendFile(__dirname + '/.well-known/' + req.params.file);
 })
+
 
 app.listen(app.get('port'), function() {
   console.log("Node app is running at localhost:" + app.get('port'))
