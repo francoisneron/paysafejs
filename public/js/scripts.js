@@ -2,7 +2,6 @@
 // Create the key below by concatenating the API username and password
 // separated by a colon and Base 64 encoding the result
 var apiKey = "ZnJhbmNvaXNuZXJvbjpCLXFhMi0wLTU3OTkwYzA5LTAtMzAyYzAyMTQyNWMyNzE1ZGRjNGQ5MGMwZTFlYjgzMTFiMTFmZmRkYjJlZWQ0YjY1MDIxNDUzOTU0MjVlYTdmODljOTc0ZWMzNjRmODA3NGNkMWY2M2Q0NzlkNzU=";
-var timer = 0;
 
 $(document).ready(function() {
 
@@ -103,12 +102,49 @@ $(document).ready(function() {
                 
 					// response contains token          
 					console.log("Card tokenization successful, token " + result.token);
-                
-					// AJAX - you would send 'token' to your server here and invoke Authorization agains Paysafe's Card API
-					delay(function(){                
-						// do stuff
-						$form.find('.subscribe').html('Payment successful <i class="fa fa-check"></i>');
-					});
+
+					var paymentData = {
+				         merchantRefNum : ID(),
+				         amount : 100,
+				         card : {
+				           paymentToken : result.token,
+				          },
+				         billingDetails:{
+				             street:"100 Queen Street West",
+				             city:"Toronto",
+				             state:"ON",
+				             country:"CA",
+				             zip:"M5H 2N2"
+				          }
+					};
+
+					var xhr = new XMLHttpRequest();
+					//xhr.timeout = 2000;
+
+					xhr.open('POST', '/payment');			
+					xhr.setRequestHeader("Content-Type", "application/json");
+				
+					xhr.send(JSON.stringify(paymentData));
+
+					xhr.onreadystatechange = function(e) {
+				    	if (xhr.readyState === 4) {
+					      	if (xhr.status === 200) {
+					       		// Code here for the server answer when successful
+					       		$form.find('.subscribe').html('Payment successful <i class="fa fa-check"></i>');
+					       		console.log("Payment succesful from server.");
+					       		console.log(xhr.response);
+					      	} else {
+					       		// Code here for the server answer when not successful
+					       		$form.find('.subscribe').html('Payment successful <i class="fa fa-exclamation"></i>');
+					       		console.log("Payment was not succesful from server.");
+					      	}
+				    	}
+				  	}
+
+				  	xhr.ontimeout = function () {
+					    // Well, it took to long do some code here to handle that
+					    console.log("Payment timeout from server.");
+				  	}
 				}
 			});
 		});
@@ -121,12 +157,12 @@ function paymentFormReady() {
 			&& $('#cardCVC').hasClass("success");
 }
 
-
-function delay(callback) {
-	clearTimeout(timer);
-	timer = setTimeout(callback, 2000);
-}
-
+var ID = function () {
+  // Math.random should be unique because of its seeding algorithm.
+  // Convert it to base 36 (numbers + letters), and grab the first 9 characters
+  // after the decimal.
+  return '_' + Math.random().toString(36).substr(2, 9);
+};
 /**
 * This method is called when the page is loaded.
 * We use it to show the Apple Pay button as appropriate.
@@ -152,7 +188,6 @@ function showApplePayButton() {
 		button.className += " visible";
 	}
 }
-
 
 /**
 * Apple Pay Logic
@@ -224,7 +259,7 @@ function applePayButtonClicked() {
 		session.completePayment(ApplePaySession.STATUS_SUCCESS);
 	
 		var xhr = new XMLHttpRequest();
-		xhr.open('POST', '/tokenize');			
+		xhr.open('POST', '/applepaytokenize');			
 		xhr.setRequestHeader("Content-Type", "application/json");
 	
 		xhr.send(JSON.stringify(payment));
@@ -274,4 +309,257 @@ function printMessage(data) {
   var div = document.createElement("div");
   div.innerHTML = data;
   document.body.appendChild(div);
+}
+
+/**
+ * Payment methods accepted by your gateway
+ *
+ * @todo confirm support for both payment methods with your gateway
+ */
+var allowedPaymentMethods = ['CARD', 'TOKENIZED_CARD'];
+
+/**
+ * Card networks supported by your site and your gateway
+ *
+ * @see {@link https://developers.google.com/pay/api/web/object-reference#CardRequirements|CardRequirements}
+ * @todo confirm card networks supported by your site and gateway
+ */
+var allowedCardNetworks = ['AMEX', 'DISCOVER', 'JCB', 'MASTERCARD', 'VISA'];
+
+/**
+ * Identify your gateway and your site's gateway merchant identifier
+ *
+ * The Google Pay API response will return an encrypted payment method capable of
+ * being charged by a supported gateway after shopper authorization
+ *
+ * @todo check with your gateway on the parameters to pass
+ * @see {@link https://developers.google.com/pay/api/web/object-reference#Gateway|PaymentMethodTokenizationParameters}
+ */
+var tokenizationParameters = {
+  tokenizationType: 'PAYMENT_GATEWAY',
+  parameters: {
+    'gateway': 'paysafe',
+    'gatewayMerchantId': apiKey
+  }
+}
+
+/**
+ * Initialize a Google Pay API client
+ *
+ * @returns {google.payments.api.PaymentsClient} Google Pay API client
+ */
+function getGooglePaymentsClient() {
+  return (new google.payments.api.PaymentsClient({environment: 'TEST'}));
+}
+
+/**
+ * Initialize Google PaymentsClient after Google-hosted JavaScript has loaded
+ */
+function onGooglePayLoaded() {
+  var paymentsClient = getGooglePaymentsClient();
+  console.log(paymentsClient);
+  paymentsClient.isReadyToPay({allowedPaymentMethods: allowedPaymentMethods})
+      .then(function(response) {
+      	console.log("Loading google pay button2111.");
+      	console.log(response);
+        if (response.result) {
+          console.log("Loading google pay button2.");
+          addGooglePayButton();
+          prefetchGooglePaymentData();
+        }
+      })
+      .catch(function(err) {
+        // show error in developer console for debugging
+        console.log("Loading google pay button4.");
+        console.error(err);
+      });
+}
+
+/**
+ * Add a Google Pay purchase button alongside an existing checkout button
+ *
+ * @see {@link https://developers.google.com/pay/api/brand-guidelines|Google Pay brand guidelines}
+ */
+function addGooglePayButton() {
+  var button = document.createElement('button');
+  // identify the element to apply Google Pay branding in related CSS
+  button.className = 'google-pay-button';
+  button.appendChild(document.createTextNode('Google Pay'));
+  button.addEventListener('click', onGooglePaymentButtonClicked);
+  document.getElementsByClassName('google-pay').appendChild(button);
+}
+
+/**
+ * Configure support for the Google Pay API
+ *
+ * @see {@link https://developers.google.com/pay/api/web/object-reference#PaymentDataRequest|PaymentDataRequest}
+ * @returns {object} PaymentDataRequest fields
+ */
+function getGooglePaymentDataConfiguration() {
+  return {
+    // @todo a merchant ID is available for a production environment after approval by Google
+    // @see {@link https://developers.google.com/pay/api/web/test-and-deploy|Test and deploy}
+    merchantId: '01234567890123456789',
+    paymentMethodTokenizationParameters: tokenizationParameters,
+    allowedPaymentMethods: allowedPaymentMethods,
+    cardRequirements: {
+      allowedCardNetworks: allowedCardNetworks
+    }
+  };
+}
+
+/**
+ * Provide Google Pay API with a payment amount, currency, and amount status
+ *
+ * @see {@link https://developers.google.com/pay/api/web/object-reference#TransactionInfo|TransactionInfo}
+ * @returns {object} transaction info, suitable for use as transactionInfo property of PaymentDataRequest
+ */
+function getGoogleTransactionInfo() {
+  return {
+    currencyCode: 'cad',
+    totalPriceStatus: 'FINAL',
+    // set to cart total
+    totalPrice: '100'
+  };
+}
+
+/**
+ * Prefetch payment data to improve performance
+ */
+function prefetchGooglePaymentData() {
+  var paymentDataRequest = getGooglePaymentDataConfiguration();
+  // transactionInfo must be set but does not affect cache
+  paymentDataRequest.transactionInfo = {
+    totalPriceStatus: 'NOT_CURRENTLY_KNOWN',
+    currencyCode: 'CAD'
+  };
+  var paymentsClient = getGooglePaymentsClient();
+  paymentsClient.prefetchPaymentData(paymentDataRequest);
+}
+
+/**
+ * Show Google Pay chooser when Google Pay purchase button is clicked
+ */
+function onGooglePaymentButtonClicked() {
+  var paymentDataRequest = getGooglePaymentDataConfiguration();
+  paymentDataRequest.transactionInfo = getGoogleTransactionInfo();
+
+  var paymentsClient = getGooglePaymentsClient();
+  paymentsClient.loadPaymentData(paymentDataRequest)
+      .then(function(paymentData) {
+        // handle the response
+        processPayment(paymentData);
+      })
+      .catch(function(err) {
+        // show error in developer console for debugging
+        console.error(err);
+      });
+}
+
+/**
+ * Process payment data returned by the Google Pay API
+ *
+ * @param {object} paymentData response from Google Pay API after shopper approves payment
+ * @see {@link https://developers.google.com/pay/api/web/object-reference#PaymentData|PaymentData object reference}
+ */
+function processPayment(paymentData) {
+  // show returned data in developer console for debugging
+	console.log(paymentData);
+
+	var xhr = new XMLHttpRequest();
+	xhr.open('POST', '/googlepaytokenize');			
+	xhr.setRequestHeader("Content-Type", "application/json");
+
+	xhr.send(JSON.stringify(paymentData));
+
+}
+
+/**
+ * Builds PaymentRequest for credit cards, but does not show any UI yet.
+ *
+ * @return {PaymentRequest} The PaymentRequest oject.
+ */
+function initPaymentRequest() {
+  let networks = ['amex', 'diners', 'discover', 'jcb', 'mastercard', 'unionpay',
+      'visa', 'mir'];
+  let types = ['debit', 'credit', 'prepaid'];
+  let supportedInstruments = [{
+    supportedMethods: networks,
+  }, {
+    supportedMethods: ['basic-card'],
+    data: {supportedNetworks: networks, supportedTypes: types},
+  }];
+
+  let details = {
+    total: {label: 'Donation', amount: {currency: 'USD', value: '55.00'}},
+    displayItems: [
+      {
+        label: 'Original donation amount',
+        amount: {currency: 'USD', value: '65.00'},
+      },
+      {
+        label: 'Friends and family discount',
+        amount: {currency: 'USD', value: '-10.00'},
+      },
+    ],
+  };
+
+  return new PaymentRequest(supportedInstruments, details);
+}
+
+/**
+ * Invokes PaymentRequest for credit cards.
+ *
+ * @param {PaymentRequest} request The PaymentRequest object.
+ */
+function googlePayButtonClicked() {
+	var request = initPaymentRequest();
+	if (window.PaymentRequest) {
+	 	request.show().then(function(instrumentResponse) {
+	    sendPaymentToServer(instrumentResponse);
+	  })
+	  .catch(function(err) {
+	    ChromeSamples.setStatus(err);
+	  });
+	}
+}
+
+/**
+ * Simulates processing the payment data on the server.
+ *
+ * @param {PaymentResponse} instrumentResponse The payment information to
+ * process.
+ */
+function sendPaymentToServer(instrumentResponse) {
+  // There's no server-side component of these samples. No transactions are
+  // processed and no money exchanged hands. Instantaneous transactions are not
+  // realistic. Add a 2 second delay to make it seem more real.
+  window.setTimeout(function() {
+    instrumentResponse.complete('success')
+        .then(function() {
+          document.getElementById('result').innerHTML =
+              instrumentToJsonString(instrumentResponse);
+        })
+        .catch(function(err) {
+          ChromeSamples.setStatus(err);
+        });
+  }, 2000);
+}
+
+/**
+ * Converts the payment instrument into a JSON string.
+ *
+ * @private
+ * @param {PaymentResponse} instrument The instrument to convert.
+ * @return {string} The JSON string representation of the instrument.
+ */
+function instrumentToJsonString(instrument) {
+  let details = instrument.details;
+  details.cardNumber = 'XXXX-XXXX-XXXX-' + details.cardNumber.substr(12);
+  details.cardSecurityCode = '***';
+
+  return JSON.stringify({
+    methodName: instrument.methodName,
+    details: details,
+  }, undefined, 2);
 }

@@ -9,6 +9,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js" type="text/javascript"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.15.0/jquery.validate.min.js" type="text/javascript"></script>
 	<script src="https://hosted.test.paysafe.com/js/v1/latest/paysafe.min.js" type="text/javascript"></script>
+	<script async src="https://payments.developers.google.com/js/apis/pay.js" onload="onGooglePayLoaded();"></script>
 	<script src="./js/scripts.js" type="text/javascript"></script>
 </head>
 <body>
@@ -85,6 +86,27 @@
 				Be sure to replace the dummy API key with a valid Paysafe API key.
 			</div>
 			
+		</div>
+		<div class="row apple-pay">
+			<h2> Buy with Apple&nbsp;Pay </h2>
+			<p>
+				This is a very simple example site that demonstrates Apple&nbsp;Pay on the web.
+			</p>
+			<p>
+				Compatible browsers will display an Apple&nbsp;Pay button below.
+			</p>
+			<div class="apple-pay-button" onclick="applePayButtonClicked()">
+
+			</div>
+		</div>
+		<div class="row google-pay">
+			<h2> Buy with Google&nbsp;Pay </h2>
+			<p>
+				This is a very simple example site that demonstrates Google&nbsp;Pay on the web.
+			</p>
+			<p>
+				Compatible browsers will display an Google&nbsp;Pay button below.
+			</p>
 		</div>
 	</div>
 </body>
