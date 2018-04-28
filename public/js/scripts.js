@@ -196,8 +196,8 @@ function showApplePayButton() {
 */
 function applePayButtonClicked() {
 	const paymentRequest = {
-        countryCode: 'US',
-        currencyCode: 'USD',
+        countryCode: 'CA',
+        currencyCode: 'CAD',
         shippingMethods: [
             {
                 label: 'Free Shipping',

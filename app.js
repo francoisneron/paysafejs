@@ -5,12 +5,6 @@ var http = require("http");
 var bodyParser = require("body-parser");
 var request = require("request");
 
-// This line is from the Node.js HTTPS documentation.
-var options = {
-  key: fs.readFileSync('./certificates/keys/client-key.pem'),
-  cert: fs.readFileSync('./certificates/keys/client-cert.pem')
-};
-
 /*
 Environment variables
 process.env.PAYSAFE_PUBLICKEY
@@ -24,28 +18,25 @@ var encoded64_publickey = new Buffer("francoisneron:B-qa2-0-57990c09-0-302c02142
 var encoded64_privatekey = new Buffer("18987-1000032307:B-qa2-0-55660eb1-0-302c02144d6da16eaaf344d779c9027d879b3fc0988e17b4021418ad7b6cf28df7f8f08e1a7d9d64264d490c7f38").toString('base64');
 var paysafe_accountnumber = "1001134270";
 
-//var APPLE_PAY_CERTIFICATE_PATH = "./certificates/merch.pem";
+var APPLE_PAY_CERTIFICATE_PATH = "./certificates/applepay/apple_pay.pem";
 //var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
 //var SSL_KEY_PATH = "./certificates/domain.key";
-//var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
+
+var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
 
 //https://7d83be73.ngrok.io/
-//var MERCHANT_DOMAIN = "7d83be73.ngrok.io";
+var MERCHANT_DOMAIN = "7d83be73.ngrok.io";
 
 //var privateKey  = fs.readFileSync(SSL_KEY_PATH);
 //var certificate = fs.readFileSync(SSL_CERTIFICATE_PATH);
-//var applePayCert = fs.readFileSync(APPLE_PAY_CERTIFICATE_PATH);
+
+var applePayCert = fs.readFileSync(APPLE_PAY_CERTIFICATE_PATH);
 
 var config = require('./config');
+
 //var credentials = {key: privateKey, cert: certificate};
 
 var app = express();
-
-// Create an HTTP service.
-//http.createServer(app).listen(80);
-
-// Create an HTTPS service identical to the HTTP service.
-//https.createServer(options, app).listen(443);
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.static(__dirname + '/views'));
@@ -61,7 +52,7 @@ app.get("/", function (req, res) {
   res.sendFile("./views/index.html");
 });
 
-/*
+
 app.post("/getApplePaySession", function (req, res) {
 	// We need a URL from the client to call
 	if (!req.body.url) return res.sendStatus(400);
@@ -90,7 +81,7 @@ app.post("/getApplePaySession", function (req, res) {
 		res.send(body);
 	});
 });
-*/
+
 
 
 app.post("/applepaytokenize", function (req, res) {
@@ -134,7 +125,7 @@ app.post("/googlepaytokenize", function (req, res) {
 		'Authorization': 'Basic ' + encoded64_publickey,
 		'Content-Type': 'application/json'
 	};
-	
+
 	console.log(req.body.token);
 	console.log(req.body.token.signature);
 	console.log(req.body.token.protocolVersion);
@@ -243,9 +234,3 @@ app.get('/.well-known/:file', (req, res, next) => {
 app.listen(app.get('port'), function() {
   console.log("Node app is running at localhost:" + app.get('port'))
 })
-
-/*
-var server = https.createServer(options, app).listen(app.get('port'), () => {
-  console.log('server running at ' + app.get('port'))
-})
-*/
