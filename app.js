@@ -28,7 +28,9 @@ var paysafe_accountnumber = "1001134270";
 //var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
 //var SSL_KEY_PATH = "./certificates/domain.key";
 //var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
-//var MERCHANT_DOMAIN = "applepayintegration-env.w5pfnavnqi.ca-central-1.elasticbeanstalk.com";
+
+//https://7d83be73.ngrok.io/
+//var MERCHANT_DOMAIN = "7d83be73.ngrok.io";
 
 //var privateKey  = fs.readFileSync(SSL_KEY_PATH);
 //var certificate = fs.readFileSync(SSL_CERTIFICATE_PATH);
@@ -105,7 +107,7 @@ app.post("/applepaytokenize", function (req, res) {
 		method: "post",
 		headers: headers,
 		body: {
-			applePayPaymentToken: req.body.token.paymentData
+			applePayPaymentToken: req.body.token
 		},
 		json: true
 	};
@@ -133,14 +135,21 @@ app.post("/googlepaytokenize", function (req, res) {
 		'Content-Type': 'application/json'
 	};
 	
-	console.log(req);
+	console.log(req.body.token);
+	console.log(req.body.token.signature);
+	console.log(req.body.token.protocolVersion);
+	console.log(req.body.token.signedMessage);
 
 	var options = {
 		url: "https://api.test.paysafe.com/customervault/v1/paywithgooglesingleusetokens",
 		method: "post",
 		headers: headers,
 		body: {
-			payWithGooglePaymentToken: req.body.token.paymentData
+			payWithGooglePaymentToken: {
+	    		signature: req.body.token.signature,
+	    		protocolVersion: req.body.token.protocolVersion,
+	    		signedMessage: req.body.token.signedMessage.toString()
+  			}
 		},
 		json: true
 	};
@@ -226,7 +235,7 @@ app.post("/payment", function (req, res) {
 
 // Apple pay server verification (need to enable SSL)
 app.get('/.well-known/:file', (req, res, next) => {
-  logger(req);
+  console.log(req);
 
   res.sendFile(__dirname + '/.well-known/' + req.params.file);
 })

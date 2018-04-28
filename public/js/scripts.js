@@ -324,7 +324,7 @@ var allowedPaymentMethods = ['CARD', 'TOKENIZED_CARD'];
  * @see {@link https://developers.google.com/pay/api/web/object-reference#CardRequirements|CardRequirements}
  * @todo confirm card networks supported by your site and gateway
  */
-var allowedCardNetworks = ['AMEX', 'DISCOVER', 'JCB', 'MASTERCARD', 'VISA'];
+var allowedCardNetworks = ['MASTERCARD', 'VISA'];
 
 /**
  * Identify your gateway and your site's gateway merchant identifier
@@ -349,7 +349,7 @@ var tokenizationParameters = {
  * @returns {google.payments.api.PaymentsClient} Google Pay API client
  */
 function getGooglePaymentsClient() {
-  return (new google.payments.api.PaymentsClient({environment: 'TEST'}));
+  return new google.payments.api.PaymentsClient({environment: 'TEST'});
 }
 
 /**
@@ -357,16 +357,11 @@ function getGooglePaymentsClient() {
  */
 function onGooglePayLoaded() {
   var paymentsClient = getGooglePaymentsClient();
-  console.log(paymentsClient);
   paymentsClient.isReadyToPay({allowedPaymentMethods: allowedPaymentMethods})
       .then(function(response) {
-      	console.log("Loading google pay button2111.");
-      	console.log(response);
-        if (response.result) {
-          console.log("Loading google pay button2.");
+        //if (response.result) {}
           addGooglePayButton();
-          prefetchGooglePaymentData();
-        }
+          prefetchGooglePaymentData(); 
       })
       .catch(function(err) {
         // show error in developer console for debugging
@@ -384,9 +379,8 @@ function addGooglePayButton() {
   var button = document.createElement('button');
   // identify the element to apply Google Pay branding in related CSS
   button.className = 'google-pay-button';
-  button.appendChild(document.createTextNode('Google Pay'));
   button.addEventListener('click', onGooglePaymentButtonClicked);
-  document.getElementsByClassName('google-pay').appendChild(button);
+  document.getElementsByClassName('google-pay')[0].appendChild(button);
 }
 
 /**
@@ -399,7 +393,7 @@ function getGooglePaymentDataConfiguration() {
   return {
     // @todo a merchant ID is available for a production environment after approval by Google
     // @see {@link https://developers.google.com/pay/api/web/test-and-deploy|Test and deploy}
-    merchantId: '01234567890123456789',
+    //merchantId: '01234567890123456789',
     paymentMethodTokenizationParameters: tokenizationParameters,
     allowedPaymentMethods: allowedPaymentMethods,
     cardRequirements: {
@@ -472,94 +466,4 @@ function processPayment(paymentData) {
 
 	xhr.send(JSON.stringify(paymentData));
 
-}
-
-/**
- * Builds PaymentRequest for credit cards, but does not show any UI yet.
- *
- * @return {PaymentRequest} The PaymentRequest oject.
- */
-function initPaymentRequest() {
-  let networks = ['amex', 'diners', 'discover', 'jcb', 'mastercard', 'unionpay',
-      'visa', 'mir'];
-  let types = ['debit', 'credit', 'prepaid'];
-  let supportedInstruments = [{
-    supportedMethods: networks,
-  }, {
-    supportedMethods: ['basic-card'],
-    data: {supportedNetworks: networks, supportedTypes: types},
-  }];
-
-  let details = {
-    total: {label: 'Donation', amount: {currency: 'USD', value: '55.00'}},
-    displayItems: [
-      {
-        label: 'Original donation amount',
-        amount: {currency: 'USD', value: '65.00'},
-      },
-      {
-        label: 'Friends and family discount',
-        amount: {currency: 'USD', value: '-10.00'},
-      },
-    ],
-  };
-
-  return new PaymentRequest(supportedInstruments, details);
-}
-
-/**
- * Invokes PaymentRequest for credit cards.
- *
- * @param {PaymentRequest} request The PaymentRequest object.
- */
-function googlePayButtonClicked() {
-	var request = initPaymentRequest();
-	if (window.PaymentRequest) {
-	 	request.show().then(function(instrumentResponse) {
-	    sendPaymentToServer(instrumentResponse);
-	  })
-	  .catch(function(err) {
-	    ChromeSamples.setStatus(err);
-	  });
-	}
-}
-
-/**
- * Simulates processing the payment data on the server.
- *
- * @param {PaymentResponse} instrumentResponse The payment information to
- * process.
- */
-function sendPaymentToServer(instrumentResponse) {
-  // There's no server-side component of these samples. No transactions are
-  // processed and no money exchanged hands. Instantaneous transactions are not
-  // realistic. Add a 2 second delay to make it seem more real.
-  window.setTimeout(function() {
-    instrumentResponse.complete('success')
-        .then(function() {
-          document.getElementById('result').innerHTML =
-              instrumentToJsonString(instrumentResponse);
-        })
-        .catch(function(err) {
-          ChromeSamples.setStatus(err);
-        });
-  }, 2000);
-}
-
-/**
- * Converts the payment instrument into a JSON string.
- *
- * @private
- * @param {PaymentResponse} instrument The instrument to convert.
- * @return {string} The JSON string representation of the instrument.
- */
-function instrumentToJsonString(instrument) {
-  let details = instrument.details;
-  details.cardNumber = 'XXXX-XXXX-XXXX-' + details.cardNumber.substr(12);
-  details.cardSecurityCode = '***';
-
-  return JSON.stringify({
-    methodName: instrument.methodName,
-    details: details,
-  }, undefined, 2);
 }
