@@ -18,23 +18,18 @@ var encoded64_publickey = new Buffer("francoisneron:B-qa2-0-57990c09-0-302c02142
 var encoded64_privatekey = new Buffer("18987-1000032307:B-qa2-0-55660eb1-0-302c02144d6da16eaaf344d779c9027d879b3fc0988e17b4021418ad7b6cf28df7f8f08e1a7d9d64264d490c7f38").toString('base64');
 var paysafe_accountnumber = "1001134270";
 
-var APPLE_PAY_CERTIFICATE_PATH = "./certificates/applepay/apple_pay.pem";
-//var SSL_CERTIFICATE_PATH = "./certificates/domain.crt";
-//var SSL_KEY_PATH = "./certificates/domain.key";
+var APPLE_PAY_CERTIFICATE_PATH = "./certificates/applepay/merchant_id.pem";
 
 var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl";
 
-//https://7d83be73.ngrok.io/
-var MERCHANT_DOMAIN = "7d83be73.ngrok.io";
-
-//var privateKey  = fs.readFileSync(SSL_KEY_PATH);
-//var certificate = fs.readFileSync(SSL_CERTIFICATE_PATH);
+//ngrok http 8080 --log stderr
+//https://0a0eb999.ngrok.io/
+var MERCHANT_DOMAIN = "0a0eb999.ngrok.io";
 
 var applePayCert = fs.readFileSync(APPLE_PAY_CERTIFICATE_PATH);
 
 var config = require('./config');
 
-//var credentials = {key: privateKey, cert: certificate};
 
 var app = express();
 
@@ -69,7 +64,6 @@ app.post("/getApplePaySession", function (req, res) {
 		},
 		json: true
 	};
-	console.log(options);
 
 	// Send the request to the Apple Pay server and return the response to the client
 	request(options, function (err, response, body) {
@@ -90,15 +84,13 @@ app.post("/applepaytokenize", function (req, res) {
 		'Authorization': 'Basic ' + encoded64_publickey,
 		'Content-Type': 'application/json'
 	};
-	
-	console.log(req);
 
 	var options = {
 		url: "https://api.test.paysafe.com/customervault/v1/applepaysingleusetokens",
 		method: "post",
 		headers: headers,
 		body: {
-			applePayPaymentToken: req.body.token
+			applePayPaymentToken: req.body.token.paymentData
 		},
 		json: true
 	};
@@ -109,7 +101,6 @@ app.post("/applepaytokenize", function (req, res) {
 			console.log(err, response, body);
 			res.status(500).send(err);
 		}else {
-			console.log(response.body);
 			res.send({				
 				token: response.body
 			});
@@ -159,34 +150,6 @@ app.post("/googlepaytokenize", function (req, res) {
 	});
 
 });
-
-/*
-
-curl -X POST https://api.test.paysafe.com/cardpayments/v1/accounts/89987201/auths \
-  -u devcentre322:B-qa2-0-53625f86-302c021476f52bdc9deab7aea876bb28762e62f92fc6712d0214736abf501e9675e55940e83ef77f5c304edc7968 \
-  -H 'Content-Type: application/json' \
-  -d ' {
-         "merchantRefNum" : "demo-1",
-         "amount" : 10098,
-         "settleWithAuth":true,
-         "card" : {
-           "cardNum" : "4111111111111111",
-           "cardExpiry":{
-             "month":2,
-             "year":2027
-            },
-            "cvv":123
-          },
-          "billingDetails":{
-             "street":"100 Queen Street West",
-             "city":"Toronto",
-             "state":"ON",
-             "country":"CA",
-             "zip":"M5H 2N2"
-          }
-        } '
-
-        */
 
 app.post("/payment", function (req, res) {
 

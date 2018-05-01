@@ -102,49 +102,6 @@ $(document).ready(function() {
                 
 					// response contains token          
 					console.log("Card tokenization successful, token " + result.token);
-
-					var paymentData = {
-				         merchantRefNum : ID(),
-				         amount : 100,
-				         card : {
-				           paymentToken : result.token,
-				          },
-				         billingDetails:{
-				             street:"100 Queen Street West",
-				             city:"Toronto",
-				             state:"ON",
-				             country:"CA",
-				             zip:"M5H 2N2"
-				          }
-					};
-
-					var xhr = new XMLHttpRequest();
-					//xhr.timeout = 2000;
-
-					xhr.open('POST', '/payment');			
-					xhr.setRequestHeader("Content-Type", "application/json");
-				
-					xhr.send(JSON.stringify(paymentData));
-
-					xhr.onreadystatechange = function(e) {
-				    	if (xhr.readyState === 4) {
-					      	if (xhr.status === 200) {
-					       		// Code here for the server answer when successful
-					       		$form.find('.subscribe').html('Payment successful <i class="fa fa-check"></i>');
-					       		console.log("Payment succesful from server.");
-					       		console.log(xhr.response);
-					      	} else {
-					       		// Code here for the server answer when not successful
-					       		$form.find('.subscribe').html('Payment successful <i class="fa fa-exclamation"></i>');
-					       		console.log("Payment was not succesful from server.");
-					      	}
-				    	}
-				  	}
-
-				  	xhr.ontimeout = function () {
-					    // Well, it took to long do some code here to handle that
-					    console.log("Payment timeout from server.");
-				  	}
 				}
 			});
 		});
@@ -207,7 +164,7 @@ function applePayButtonClicked() {
             },
             {
                 label: 'Express Shipping',
-                amount: '5.00',
+                amount: '1.00',
                 identifier: 'express',
                 detail: 'Delivers in two business days',
             },
@@ -222,7 +179,7 @@ function applePayButtonClicked() {
  
         total: {
             label: 'Apple Pay Example',
-            amount: '8.99',
+            amount: '1.00',
         },
  
         supportedNetworks:[ 'amex', 'discover', 'masterCard', 'visa'],
@@ -257,7 +214,7 @@ function applePayButtonClicked() {
 
 		// ...return a status and redirect to a confirmation page
 		session.completePayment(ApplePaySession.STATUS_SUCCESS);
-	
+
 		var xhr = new XMLHttpRequest();
 		xhr.open('POST', '/applepaytokenize');			
 		xhr.setRequestHeader("Content-Type", "application/json");
@@ -365,7 +322,6 @@ function onGooglePayLoaded() {
       })
       .catch(function(err) {
         // show error in developer console for debugging
-        console.log("Loading google pay button4.");
         console.error(err);
       });
 }
@@ -442,7 +398,7 @@ function onGooglePaymentButtonClicked() {
   paymentsClient.loadPaymentData(paymentDataRequest)
       .then(function(paymentData) {
         // handle the response
-        processPayment(paymentData);
+        googlePayTokenize(paymentData);
       })
       .catch(function(err) {
         // show error in developer console for debugging
@@ -456,7 +412,7 @@ function onGooglePaymentButtonClicked() {
  * @param {object} paymentData response from Google Pay API after shopper approves payment
  * @see {@link https://developers.google.com/pay/api/web/object-reference#PaymentData|PaymentData object reference}
  */
-function processPayment(paymentData) {
+function googlePayTokenize(paymentData) {
   // show returned data in developer console for debugging
 	console.log(paymentData);
 
@@ -465,5 +421,59 @@ function processPayment(paymentData) {
 	xhr.setRequestHeader("Content-Type", "application/json");
 
 	xhr.send(JSON.stringify(paymentData));
+
+}
+
+/**
+ * Process payment data returned by the Google Pay API
+ *
+ * @param {object} paymentData response from Google Pay API after shopper approves payment
+ * @see {@link https://developers.google.com/pay/api/web/object-reference#PaymentData|PaymentData object reference}
+ */
+function processPayment(paymentToken) {
+  // show returned data in developer console for debugging
+	console.log(paymentToken);
+
+	var paymentData = {
+     merchantRefNum : ID(),
+     amount : 100,
+     card : {
+       paymentToken : paymentToken,
+      },
+     billingDetails:{
+         street:"100 Queen Street West",
+         city:"Toronto",
+         state:"ON",
+         country:"CA",
+         zip:"M5H 2N2"
+      }
+	};
+
+	var xhr = new XMLHttpRequest();
+
+	xhr.open('POST', '/payment');			
+	xhr.setRequestHeader("Content-Type", "application/json");
+
+	xhr.send(JSON.stringify(paymentData));
+
+	xhr.onreadystatechange = function(e) {
+		if (xhr.readyState === 4) {
+	      	if (xhr.status === 200) {
+	       		// Code here for the server answer when successful
+	       		$form.find('.subscribe').html('Payment successful <i class="fa fa-check"></i>');
+	       		console.log("Payment succesful from server.");
+	       		console.log(xhr.response);
+	      	} else {
+	       		// Code here for the server answer when not successful
+	       		$form.find('.subscribe').html('Payment successful <i class="fa fa-exclamation"></i>');
+	       		console.log("Payment was not succesful from server.");
+	      	}
+		}
+	}
+
+	xhr.ontimeout = function () {
+    // Well, it took to long do some code here to handle that
+    console.log("Payment timeout from server.");
+	}
 
 }
