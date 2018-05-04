@@ -18,10 +18,10 @@
     "express": "^4.16.3",
     "morgan": "^1.8.1",
     "parse-domain": "^2.0.0",
-    "request": "^2.83.0"
+    "request": "^2.83.0",
+    "ngrok": "^2.2.9"
   },
   "devDependencies": {
-    "ngrok": "^2.2.9"
   },
   "repository": {
     "type": "git",
