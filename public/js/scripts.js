@@ -102,6 +102,8 @@ $(document).ready(function() {
                 
 					// response contains token          
 					console.log("Card tokenization successful, token " + result.token);
+
+					processPayment(result.token);
 				}
 			});
 		});
@@ -120,32 +122,67 @@ var ID = function () {
   // after the decimal.
   return '_' + Math.random().toString(36).substr(2, 9);
 };
-/**
-* This method is called when the page is loaded.
-* We use it to show the Apple Pay button as appropriate.
-* Here we're using the ApplePaySession.canMakePayments() method,
-* which performs a basic hardware check. 
-**/
 
-document.addEventListener('DOMContentLoaded', () => {
-	var MERCHANT_IDENTIFIER = "merchant.com.paysafe.atlas";
+/**
+ * Initialize Apple Pay session.
+ */
+function onApplePayLoaded() {
+	var MERCHANT_IDENTIFIER = "merchant.com.paysafe.integrations.mtl"; 
 	if (window.ApplePaySession) {
 		ApplePaySession.canMakePaymentsWithActiveCard(MERCHANT_IDENTIFIER).then(function(canMakePayments) {
 			if (canMakePayments) {
-				showApplePayButton();
+				addApplePayButton();
 			}
 		});
 	}
-});
-
-function showApplePayButton() {
-	HTMLCollection.prototype[Symbol.iterator] = Array.prototype[Symbol.iterator];
-	const buttons = document.getElementsByClassName("apple-pay-button");
-	for (let button of buttons) {
-		button.className += " visible";
-	}
 }
 
+/**
+ * Initialize Google PaymentsClient after Google-hosted JavaScript has loaded
+ */
+function onGooglePayLoaded() {
+  var paymentsClient = getGooglePaymentsClient();
+  paymentsClient.isReadyToPay({allowedPaymentMethods: allowedPaymentMethods})
+      .then(function(response) {
+        if (response.result) {}
+          addGooglePayButton();
+          prefetchGooglePaymentData(); 
+      }).catch(function(err) {
+        	console.error(err);
+      });
+}
+
+/**
+ * On page load initialize our supported payments for Apple Pay or Google Pay.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+	onGooglePayLoaded();
+	onApplePayLoaded();
+});
+
+/**
+ * Add a Google Pay purchase button alongside an existing checkout button
+ *
+ * @see {@link https://developers.google.com/pay/api/brand-guidelines|Google Pay brand guidelines}
+ */
+function addGooglePayButton() {
+  var button = document.createElement('button');
+  // identify the element to apply Google Pay branding in related CSS
+  button.className = 'google-pay-button';
+  button.addEventListener('click', onGooglePaymentButtonClicked);
+  document.getElementsByClassName('google-pay')[0].appendChild(button);
+}
+
+/**
+ * Add a Apple Pay purchase button alongside an existing checkout button
+ */
+function addApplePayButton() {
+  var button = document.createElement('button');
+  // identify the element to apply Apple Pay branding in related CSS
+  button.className = 'apple-pay-button';
+  button.addEventListener('click', onApplePayPaymentButtonClicked);
+  document.getElementsByClassName('apple-pay')[0].appendChild(button);
+}
 /**
 * Apple Pay Logic
 * Our entry point for Apple Pay interactions.
@@ -179,11 +216,11 @@ function applePayButtonClicked() {
  
         total: {
             label: 'Apple Pay Example',
-            amount: '1.00',
+            amount: '5.00',
         },
  
-        supportedNetworks:[ 'amex', 'discover', 'masterCard', 'visa'],
-        merchantCapabilities: [ 'supports3DS' ],
+        supportedNetworks:['masterCard', 'visa']
+        //merchantCapabilities: [ 'supports3DS' ],
  
         //requiredShippingContactFields: [ 'postalAddress', 'email' ],
     };
@@ -195,7 +232,6 @@ function applePayButtonClicked() {
 	* We call our merchant session endpoint, passing the URL to use
 	*/
 	session.onvalidatemerchant = (event) => {
-		console.log("Validate merchant");
 		getApplePaySession(event.validationURL).then(function(response) {
   			session.completeMerchantValidation(response);
 		});
@@ -288,15 +324,16 @@ var allowedCardNetworks = ['MASTERCARD', 'VISA'];
  *
  * The Google Pay API response will return an encrypted payment method capable of
  * being charged by a supported gateway after shopper authorization
- *
+ * 'gateway': 'paysafe',
+ * 'gatewayMerchantId': apiKey
  * @todo check with your gateway on the parameters to pass
  * @see {@link https://developers.google.com/pay/api/web/object-reference#Gateway|PaymentMethodTokenizationParameters}
  */
 var tokenizationParameters = {
   tokenizationType: 'PAYMENT_GATEWAY',
   parameters: {
-    'gateway': 'paysafe',
-    'gatewayMerchantId': apiKey
+		gateway: 'paysafe',
+    gatewayMerchantId: apiKey
   }
 }
 
@@ -307,36 +344,6 @@ var tokenizationParameters = {
  */
 function getGooglePaymentsClient() {
   return new google.payments.api.PaymentsClient({environment: 'TEST'});
-}
-
-/**
- * Initialize Google PaymentsClient after Google-hosted JavaScript has loaded
- */
-function onGooglePayLoaded() {
-  var paymentsClient = getGooglePaymentsClient();
-  paymentsClient.isReadyToPay({allowedPaymentMethods: allowedPaymentMethods})
-      .then(function(response) {
-        //if (response.result) {}
-          addGooglePayButton();
-          prefetchGooglePaymentData(); 
-      })
-      .catch(function(err) {
-        // show error in developer console for debugging
-        console.error(err);
-      });
-}
-
-/**
- * Add a Google Pay purchase button alongside an existing checkout button
- *
- * @see {@link https://developers.google.com/pay/api/brand-guidelines|Google Pay brand guidelines}
- */
-function addGooglePayButton() {
-  var button = document.createElement('button');
-  // identify the element to apply Google Pay branding in related CSS
-  button.className = 'google-pay-button';
-  button.addEventListener('click', onGooglePaymentButtonClicked);
-  document.getElementsByClassName('google-pay')[0].appendChild(button);
 }
 
 /**
@@ -432,8 +439,6 @@ function googlePayTokenize(paymentData) {
  */
 function processPayment(paymentToken) {
   // show returned data in developer console for debugging
-	console.log(paymentToken);
-
 	var paymentData = {
      merchantRefNum : ID(),
      amount : 100,
@@ -448,6 +453,8 @@ function processPayment(paymentToken) {
          zip:"M5H 2N2"
       }
 	};
+
+	var $form = $('#payment-form');
 
 	var xhr = new XMLHttpRequest();
 
@@ -467,6 +474,7 @@ function processPayment(paymentToken) {
 	       		// Code here for the server answer when not successful
 	       		$form.find('.subscribe').html('Payment successful <i class="fa fa-exclamation"></i>');
 	       		console.log("Payment was not succesful from server.");
+	       		console.log(xhr.response);
 	      	}
 		}
 	}

@@ -1,17 +1,27 @@
 {
   "name": "paysafe-demo",
   "version": "0.0.1",
-  "description": "Paysafe Demo",
-  "main": "app.js",
+  "private": true,
+  "description": "Checkout demo accepting payments on the web with PaysafeJS, Paysafe Checkout, Alternate Payments, Payments Request, Apple Pay and Google Pay.",
+  "engines": {
+    "node": "8.x"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server/server.js"
   },
   "author": "Francois Neron",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.16.3",
     "body-parser": "^1.4.3",
+    "dotenv": "^4.0.0",
+    "ejs": "^2.5.7",
+    "express": "^4.16.3",
+    "morgan": "^1.8.1",
+    "parse-domain": "^2.0.0",
     "request": "^2.83.0"
+  },
+  "devDependencies": {
+    "ngrok": "^2.2.9"
   },
   "repository": {
     "type": "git",
